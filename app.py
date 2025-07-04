@@ -167,7 +167,13 @@ def update_dashboard(stock_code, compare_code, date_range, dark_mode):
         height=300
     )
 
-    info = f"Son fiyat: {df['Close'][-1]:.2f} TL | Hacim: {df['Volume'][-1]:,.0f}"
+    if not df.empty and 'Close' in df.columns and 'Volume' in df.columns:
+    last_price = df['Close'].iloc[-1]
+    last_volume = df['Volume'].iloc[-1]
+    info = f"Son fiyat: {last_price:.2f} TL | Hacim: {last_volume:,.0f}"
+else:
+    info = "Veri bulunamadı. Lütfen geçerli bir tarih aralığı veya hisse seçin."
+
 
     return price_fig, rsi_fig, macd_fig, bist100_stocks[stock_code], info
 
