@@ -171,5 +171,9 @@ def update_dashboard(stock_code, compare_code, date_range, dark_mode):
 
     return price_fig, rsi_fig, macd_fig, bist100_stocks[stock_code], info
 
+import os
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 8050))
+    app.run(host="0.0.0.0", port=port, debug=True)
+
