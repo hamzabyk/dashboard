@@ -1,9 +1,9 @@
-# app.py
 import dash
 from dash import dcc, html, Input, Output, State
 import plotly.graph_objs as go
 import yfinance as yf
 import pandas as pd
+import os
 
 # Dash uygulamasını başlat
 app = dash.Dash(__name__)
@@ -16,10 +16,8 @@ bist100_stocks = {
     "SISE.IS": "Şişecam A.Ş.",
     "BIMAS.IS": "BİM Birleşik Mağazalar A.Ş.",
     "EREGL.IS": "Ereğli Demir ve Çelik Fabrikaları T.A.Ş."
-    # Buraya diğer BIST 100 hisseleri eklenebilir.
 }
 
-# Başlangıç verisi süresi (kullanıcı seçimi ile değiştirilecek)
 def get_stock_data(ticker, period='3mo'):
     df = yf.download(ticker, period=period, interval='1d')
     df = df.dropna()
@@ -124,62 +122,34 @@ def update_dashboard(stock_code, compare_code, date_range, dark_mode):
 
     theme = "plotly_dark" if "dark" in dark_mode else "plotly_white"
 
-    # Fiyat Grafiği
     price_fig = go.Figure()
     price_fig.add_trace(go.Scatter(x=df.index, y=df['Close'], mode='lines', name=bist100_stocks[stock_code], line=dict(color='#004080')))
-
     if compare_df is not None:
         price_fig.add_trace(go.Scatter(x=compare_df.index, y=compare_df['Close'], mode='lines', name=bist100_stocks[compare_code], line=dict(color='orange')))
+    price_fig.update_layout(title="Fiyat Karşılaştırması", xaxis_title="Tarih", yaxis_title="Fiyat (TL)", template=theme, height=500)
 
-    price_fig.update_layout(
-        title="Fiyat Karşılaştırması",
-        xaxis_title="Tarih",
-        yaxis_title="Fiyat (TL)",
-        template=theme,
-        height=500
-    )
-
-    # RSI Grafiği
     rsi_fig = go.Figure([
         go.Scatter(x=df.index, y=rsi, mode='lines', name='RSI', line=dict(color='orange')),
         go.Scatter(x=df.index, y=[70]*len(df), mode='lines', name='Aşırı Alım', line=dict(color='red', dash='dash')),
         go.Scatter(x=df.index, y=[30]*len(df), mode='lines', name='Aşırı Satım', line=dict(color='green', dash='dash'))
     ])
-    rsi_fig.update_layout(
-        title="RSI (Relative Strength Index)",
-        xaxis_title="Tarih",
-        yaxis_title="RSI Değeri",
-        template=theme,
-        height=300,
-        yaxis=dict(range=[0, 100])
-    )
+    rsi_fig.update_layout(title="RSI (Relative Strength Index)", xaxis_title="Tarih", yaxis_title="RSI Değeri", template=theme, height=300, yaxis=dict(range=[0, 100]))
 
-    # MACD Grafiği
     macd_fig = go.Figure([
         go.Scatter(x=df.index, y=macd, mode='lines', name='MACD', line=dict(color='blue')),
         go.Scatter(x=df.index, y=signal, mode='lines', name='Signal', line=dict(color='red'))
     ])
-    macd_fig.update_layout(
-        title="MACD (Moving Average Convergence Divergence)",
-        xaxis_title="Tarih",
-        yaxis_title="MACD Değeri",
-        template=theme,
-        height=300
-    )
+    macd_fig.update_layout(title="MACD (Moving Average Convergence Divergence)", xaxis_title="Tarih", yaxis_title="MACD Değeri", template=theme, height=300)
 
     if not df.empty and 'Close' in df.columns and 'Volume' in df.columns:
-    last_price = df['Close'].iloc[-1]
-    last_volume = df['Volume'].iloc[-1]
-    info = f"Son fiyat: {last_price:.2f} TL | Hacim: {last_volume:,.0f}"
-else:
-    info = "Veri bulunamadı. Lütfen geçerli bir tarih aralığı veya hisse seçin."
-
+        last_price = df['Close'].iloc[-1]
+        last_volume = df['Volume'].iloc[-1]
+        info = f"Son fiyat: {last_price:.2f} TL | Hacim: {last_volume:,.0f}"
+    else:
+        info = "Veri bulunamadı. Lütfen geçerli bir tarih aralığı veya hisse seçin."
 
     return price_fig, rsi_fig, macd_fig, bist100_stocks[stock_code], info
-
-import os
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8050))
     app.run(host="0.0.0.0", port=port, debug=True)
-
